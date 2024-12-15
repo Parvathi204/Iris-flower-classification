@@ -1,0 +1,80 @@
+#importing the necessary libraries and modules.
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+
+# Load the dataset
+data_url = r"C:\Users\paruo\OneDrive\Documents\one drive documents\OneDrive\Desktop\python pprogram from vs code\IRIS.csv"
+iris = pd.read_csv(data_url)
+
+# Explore the dataset
+print("First 5 rows of the dataset:")
+print(iris.head())
+print("\nDataset summary:")
+print(iris.describe())
+print("\nClass distribution:")
+print(iris['species'].value_counts())
+
+# Visualize data
+sns.pairplot(iris, hue="species", diag_kind="kde", palette="Set2")
+plt.suptitle("Pairplot of Iris Dataset", y=1.02)
+plt.show()
+
+# Heatmap for correlation
+plt.figure(figsize=(8, 6))
+numeric_features=iris.select_dtypes(include=[np.number])
+sns.heatmap(numeric_features.corr(), annot=True, cmap="coolwarm", fmt=".2f")
+plt.title("Feature Correlation")
+plt.show()
+
+# Feature and target separation
+X = iris.drop(columns=['species'])
+y = iris['species']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Model 1: Support Vector Machine (SVM)
+svm_model = SVC(kernel='linear', C=1, random_state=42)
+svm_model.fit(X_train_scaled, y_train)
+y_pred_svm = svm_model.predict(X_test_scaled)
+print("\nSVM Model Results:")
+print("Accuracy:", accuracy_score(y_test, y_pred_svm))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_svm))
+print("Classification Report:\n", classification_report(y_test, y_pred_svm))
+
+# Model 2: Logistic Regression
+log_reg_model = LogisticRegression(random_state=42)
+log_reg_model.fit(X_train_scaled, y_train)
+y_pred_log_reg = log_reg_model.predict(X_test_scaled)
+print("\nLogistic Regression Model Results:")
+print("Accuracy:", accuracy_score(y_test, y_pred_log_reg))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_log_reg))
+print("Classification Report:\n", classification_report(y_test, y_pred_log_reg))
+
+# Visual comparison of both models
+model_comparison = pd.DataFrame({
+    "Model": ["SVM", "Logistic Regression"],
+    "Accuracy": [accuracy_score(y_test, y_pred_svm), accuracy_score(y_test, y_pred_log_reg)]
+})
+sns.barplot(x="Model", y="Accuracy", data=model_comparison, palette="viridis")
+plt.title("Model Comparison")
+plt.ylim(0.8, 1.0)
+plt.show()
+
+# Save the better model for deployment
+if accuracy_score(y_test, y_pred_svm) > accuracy_score(y_test, y_pred_log_reg):
+    import joblib
+    joblib.dump(svm_model, "iris_svm_model.pkl")
+    print("SVM model saved as iris_svm_model.pkl")
+else:
+    import joblib
+    joblib.dump(log_reg_model, "iris_log_reg_model.pkl")
+    print("Logistic Regression model saved as iris_log_reg_model.pkl")
